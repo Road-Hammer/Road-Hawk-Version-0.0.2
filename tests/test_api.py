@@ -39,7 +39,11 @@ def test_api_health_smoke(client: TestClient) -> None:
     assert payload["contact"]["phone"] == "570-442-0273"
     assert "Monday to Friday" in payload["contact"]["hours"]
     assert any(
-        link["label"] == "X" and link["url"] == "https://x.com/1stRoadhammer"
+        link["label"] == "YouTube" and link["display"] == "YouTube"
+        for link in payload["contact"]["links"]
+    )
+    assert any(
+        link["label"] == "X" and link["display"] == "X" and link["url"] == "https://x.com/1stRoadhammer"
         for link in payload["contact"]["links"]
     )
     assert any(

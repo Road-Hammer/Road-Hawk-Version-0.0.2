@@ -1,0 +1,4 @@
+From https://github.com/Road-Hammer/Road-Hawk-Version-0.0.2
+ * branch            Road-Hawk  -> FETCH_HEAD
+  WARNING: The scripts road-hawk-api.exe and road-hawk.exe are installed in 'C:\Users\tonyz\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.

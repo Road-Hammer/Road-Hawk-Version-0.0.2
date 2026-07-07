@@ -40,9 +40,9 @@ CONTACT_LINKS: list[dict[str, str]] = [
     {
         "label": "YouTube",
         "url": "https://www.youtube.com/@1stRoadhammer",
-        "display": "@1stRoadhammer",
+        "display": "YouTube",
     },
-    {"label": "X", "url": "https://x.com/1stRoadhammer", "display": "@1stRoadhammer"},
+    {"label": "X", "url": "https://x.com/1stRoadhammer", "display": "X"},
 ]
 
 TRADEMARK_FOOTER_SHORT = (

@@ -41,8 +41,8 @@ export const CONTACT_LINKS: ContactLink[] = [
     url: "https://www.facebook.com/profile.php?id=61578962531585",
     display: "Facebook",
   },
-  { label: "YouTube", url: "https://www.youtube.com/@1stRoadhammer", display: "@1stRoadhammer" },
-  { label: "X", url: "https://x.com/1stRoadhammer", display: "@1stRoadhammer" },
+  { label: "YouTube", url: "https://www.youtube.com/@1stRoadhammer", display: "YouTube" },
+  { label: "X", url: "https://x.com/1stRoadhammer", display: "X" },
 ];
 
 export const TRADEMARK_FOOTER_SHORT = `${COPYRIGHT_NOTICE}
