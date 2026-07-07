@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-road-bg text-slate-100 antialiased;
+  background-image:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.08), transparent 30%),
+    linear-gradient(180deg, #0c0f14 0%, #0a0d12 100%);
+  min-height: 100vh;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-road-border bg-road-panel/90 p-6 shadow-xl shadow-black/20;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-road-border bg-road-bg px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-road-amber;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-road-amber px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-road-border px-4 py-2 text-sm text-slate-200 transition hover:border-road-amber hover:text-road-amber;
+  }
+
+  .stat-value {
+    @apply text-3xl font-semibold tracking-tight text-white;
+  }
+
+  .table-shell {
+    @apply overflow-x-auto rounded-xl border border-road-border;
+  }
+
+  .table-shell table {
+    @apply min-w-full text-left text-sm;
+  }
+
+  .table-shell th {
+    @apply border-b border-road-border bg-black/20 px-4 py-3 font-medium text-road-muted;
+  }
+
+  .table-shell td {
+    @apply border-b border-road-border/60 px-4 py-3 text-slate-200;
+  }
+}
