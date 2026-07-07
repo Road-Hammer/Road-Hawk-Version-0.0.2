@@ -13,6 +13,8 @@ from .branding import (
     COMPANY_LEGAL,
     COMPANY_SHORT,
     COPYRIGHT_NOTICE,
+    PRIVACY_FOOTER_SHORT,
+    PRIVACY_NOTICE_ROAD_HAWK_TITLE,
     PRODUCT,
     TAGLINE,
 )
@@ -120,6 +122,8 @@ def health() -> dict[str, str]:
         "company": COMPANY_LEGAL,
         "company_short": COMPANY_SHORT,
         "copyright": COPYRIGHT_NOTICE,
+        "privacy_notice": PRIVACY_NOTICE_ROAD_HAWK_TITLE,
+        "privacy_footer": PRIVACY_FOOTER_SHORT,
         "brand_assets_source": BRAND_ASSETS_SOURCE,
         "mode": deploy_mode(),
         "api_url": api_url(),

@@ -177,6 +177,18 @@ Road Hammer Driver Solutions — NEPA, USA
 
 📫 [office@thatdambbs.com](mailto:office@thatdambbs.com)
 
+## Privacy
+
+STWL does not sell user data.
+
+Susquehanna Timberwolf Lines LLC does not sell, rent, trade, or broker user, driver, customer, vendor, or operational data to third parties. Data collected through STWL systems, including Road Hawk, is used only for authorized business, operational, compliance, safety, support, recordkeeping, and service-improvement purposes.
+
+STWL does not use user data for third-party advertising markets, data-broker resale, or unrelated commercial profiling.
+
+Any sharing of information is limited to what is necessary to provide services, comply with law, protect the business, support authorized operations, or fulfill user-approved requests.
+
+The web dashboard includes a **Privacy** page (`/privacy`) with the Road Hawk–specific notice and full STWL statement.
+
 ## Copyright
 
 © 2026 Susquehanna Timberwolf Lines LLC. All rights reserved.

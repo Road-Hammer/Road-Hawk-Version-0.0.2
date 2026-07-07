@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   BRAND,
   COMPANY_LEGAL,
@@ -6,6 +7,7 @@ import {
   COPYRIGHT_NOTICE,
   LOGO_ALT,
   LOGO_PATH,
+  PRIVACY_FOOTER_SHORT,
   PRODUCT,
   PRODUCT_LINE,
 } from "@/lib/branding";
@@ -29,8 +31,15 @@ export function AppFooter() {
         </div>
         <p className="text-right">{COPYRIGHT_NOTICE}</p>
       </div>
-      <p className="mt-2 text-[11px] text-road-muted/80">
-        {PRODUCT} · {COMPANY_SHORT} / {BRAND} · Brand assets: D:\STWL
+      <p className="mt-3 text-[11px] leading-relaxed text-road-muted/90">{PRIVACY_FOOTER_SHORT}</p>
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-road-muted/80">
+        <span>
+          {PRODUCT} · {COMPANY_SHORT} / {BRAND}
+        </span>
+        <span aria-hidden="true">·</span>
+        <Link href="/privacy" className="text-road-amber/90 transition hover:text-road-amber">
+          Privacy notice
+        </Link>
       </p>
     </footer>
   );

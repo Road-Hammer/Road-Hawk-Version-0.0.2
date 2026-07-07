@@ -18,6 +18,7 @@ const links = [
   { href: "/trips", label: "Trips" },
   { href: "/fleet", label: "Fleet" },
   { href: "/maintenance", label: "Maintenance" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export function Sidebar() {

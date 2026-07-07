@@ -27,3 +27,5 @@ def test_api_health_smoke(client: TestClient) -> None:
     assert payload["status"] == "ok"
     assert payload["service"] == "road-hawk"
     assert "copyright" in payload
+    assert "privacy_footer" in payload
+    assert "STWL does not sell" in payload["privacy_footer"]

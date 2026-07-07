@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { ApiOffline } from "@/components/ApiOffline";
 import { DocumentIntake } from "@/components/DocumentIntake";
+import { PRIVACY_FOOTER_SHORT } from "@/lib/branding";
 import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +17,12 @@ export default async function DocumentsPage() {
           <p className="mt-3 max-w-3xl text-sm text-road-muted">
             Upload driver paperwork, review machine-extracted fields, and verify before records become
             official. OCR is a fallback — never treated as gospel.
+          </p>
+          <p className="mt-3 max-w-3xl text-xs leading-relaxed text-road-muted/90">
+            {PRIVACY_FOOTER_SHORT}{" "}
+            <Link href="/privacy" className="text-road-amber/90 hover:text-road-amber">
+              Full privacy notice
+            </Link>
           </p>
         </header>
         <DocumentIntake initialDocuments={documents} />
