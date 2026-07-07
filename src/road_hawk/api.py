@@ -6,7 +6,15 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .branding import BRAND, COMPANY_LEGAL, COMPANY_SHORT, COPYRIGHT_NOTICE, PRODUCT, TAGLINE
+from .branding import (
+    BRAND,
+    BRAND_ASSETS_SOURCE,
+    COMPANY_LEGAL,
+    COMPANY_SHORT,
+    COPYRIGHT_NOTICE,
+    PRODUCT,
+    TAGLINE,
+)
 from .services import (
     TripInput,
     bootstrap,
@@ -84,6 +92,7 @@ def health() -> dict[str, str]:
         "company": COMPANY_LEGAL,
         "company_short": COMPANY_SHORT,
         "copyright": COPYRIGHT_NOTICE,
+        "brand_assets_source": BRAND_ASSETS_SOURCE,
     }
 
 

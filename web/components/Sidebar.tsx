@@ -1,12 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BRAND,
-  COMPANY_LEGAL,
-  COMPANY_SHORT,
   COPYRIGHT_NOTICE,
+  LOGO_ALT,
+  LOGO_PATH,
   PRODUCT,
   TAGLINE,
 } from "@/lib/branding";
@@ -24,10 +25,16 @@ export function Sidebar() {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-road-border bg-black/20 px-5 py-8">
       <div className="mb-10">
-        <p className="text-xs uppercase tracking-[0.35em] text-road-amber">{COMPANY_SHORT}</p>
-        <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-road-muted">
-          {COMPANY_LEGAL}
-        </p>
+        <div className="overflow-hidden rounded-xl border border-road-border bg-black/40 shadow-lg shadow-black/30">
+          <Image
+            src={LOGO_PATH}
+            alt={LOGO_ALT}
+            width={512}
+            height={512}
+            priority
+            className="h-auto w-full"
+          />
+        </div>
         <h1 className="mt-4 font-display text-3xl text-white">{PRODUCT}</h1>
         <p className="mt-1 text-sm text-road-amber/90">by {BRAND}</p>
         <p className="mt-2 text-sm text-road-muted">{TAGLINE}</p>

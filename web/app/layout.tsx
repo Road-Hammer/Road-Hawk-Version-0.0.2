@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { AppFooter } from "@/components/AppFooter";
 import { Sidebar } from "@/components/Sidebar";
-import { BRAND, COMPANY_LEGAL, COMPANY_SHORT, PRODUCT, TAGLINE } from "@/lib/branding";
+import { BRAND, COMPANY_LEGAL, COMPANY_SHORT, LOGO_PATH, PRODUCT, TAGLINE } from "@/lib/branding";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: `${PRODUCT} | ${COMPANY_SHORT}`,
   description: `${PRODUCT} by ${BRAND} — fleet and driver operations for trucking. ${COMPANY_LEGAL}. ${TAGLINE}`,
+  icons: {
+    icon: LOGO_PATH,
+    apple: LOGO_PATH,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

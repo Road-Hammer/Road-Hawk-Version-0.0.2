@@ -66,6 +66,14 @@ Open http://localhost:3000 (API at http://127.0.0.1:8000)
 
 Data is stored in `data/road_hawk.db`. Legacy code is preserved in `archive/` (including `archive/legacy-0.0.2/`).
 
+## STWL brand assets
+
+Canonical brand files live on **D:** at `D:\STWL\STWL\SCREENSHOTS\`. The web UI uses the STWL square logo synced into `web/public/brand/`.
+
+```powershell
+.\scripts\sync-brand-assets.ps1
+```
+
 ## Project Structure
 
 ```

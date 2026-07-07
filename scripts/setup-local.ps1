@@ -13,6 +13,9 @@ foreach ($dir in $nodePaths) {
     }
 }
 
+Write-Host "Syncing STWL brand assets from D:\STWL..."
+& (Join-Path $PSScriptRoot "sync-brand-assets.ps1")
+
 Write-Host "Installing Python package..."
 pip install -e $repo
 
