@@ -1,5 +1,13 @@
 import uvicorn
 
+from .config import api_host, api_port, apply_runtime_config
+
 
 def main() -> None:
-    uvicorn.run("road_hawk.api:app", host="127.0.0.1", port=8000, reload=True)
+    apply_runtime_config()
+    uvicorn.run(
+        "road_hawk.api:app",
+        host=api_host(),
+        port=api_port(),
+        reload=True,
+    )

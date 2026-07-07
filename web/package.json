@@ -3,10 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bin\\run-with-node.cmd dev",
-    "build": "bin\\run-with-node.cmd build",
-    "start": "bin\\run-with-node.cmd start",
-    "lint": "bin\\run-with-node.cmd lint"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "dev:win": "bin\\run-with-node.cmd dev",
+    "build:win": "bin\\run-with-node.cmd build",
+    "start:win": "bin\\run-with-node.cmd start",
+    "lint:win": "bin\\run-with-node.cmd lint",
+    "dev:unix": "sh bin/run-with-node.sh dev",
+    "build:unix": "sh bin/run-with-node.sh build",
+    "start:unix": "sh bin/run-with-node.sh start",
+    "lint:unix": "sh bin/run-with-node.sh lint"
   },
   "dependencies": {
     "next": "15.1.11",

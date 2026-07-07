@@ -190,7 +190,9 @@ MENU = {
 
 def main() -> None:
     from .branding import BRAND, COMPANY_LEGAL, COMPANY_SHORT, COPYRIGHT_NOTICE, PRODUCT, TAGLINE
+    from .config import apply_runtime_config
 
+    apply_runtime_config()
     bootstrap()
     print(f"{PRODUCT} v0.1 — {TAGLINE}")
     print(f"{COMPANY_SHORT} / {BRAND} · {COMPANY_LEGAL}")

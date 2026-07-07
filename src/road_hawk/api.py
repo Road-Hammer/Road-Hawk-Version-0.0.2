@@ -15,6 +15,7 @@ from .branding import (
     PRODUCT,
     TAGLINE,
 )
+from .config import api_url, apply_runtime_config, cors_origins, deploy_mode
 from .services import (
     TripInput,
     bootstrap,
@@ -39,7 +40,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +49,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
+    apply_runtime_config()
     bootstrap()
 
 
@@ -93,6 +95,8 @@ def health() -> dict[str, str]:
         "company_short": COMPANY_SHORT,
         "copyright": COPYRIGHT_NOTICE,
         "brand_assets_source": BRAND_ASSETS_SOURCE,
+        "mode": deploy_mode(),
+        "api_url": api_url(),
     }
 
 
