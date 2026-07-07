@@ -40,6 +40,17 @@ function Get-RoadHawkWebWorkDir {
     return $junction
 }
 
+function Test-RoadHawkWebDepsHealthy {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WebWorkDir
+    )
+
+    $nextCmd = Join-Path $WebWorkDir "node_modules\.bin\next.cmd"
+    $nextPkg = Join-Path $WebWorkDir "node_modules\next\package.json"
+    return (Test-Path $nextCmd) -and (Test-Path $nextPkg)
+}
+
 function Reset-RoadHawkWebNodeModules {
     param(
         [Parameter(Mandatory = $true)]
@@ -53,4 +64,20 @@ function Reset-RoadHawkWebNodeModules {
 
     Write-Host "Removing existing node_modules via short path..."
     cmd /c "rmdir /s /q `"$nodeModules`""
+    if (-not (Test-Path $nodeModules)) {
+        return
+    }
+
+    $stamp = Get-Date -Format "yyyyMMddHHmmss"
+    $quarantineName = "node_modules.quarantine.$stamp"
+    Write-Host "rmdir failed; quarantining node_modules to $quarantineName..."
+    try {
+        Rename-Item -LiteralPath $nodeModules -NewName $quarantineName -Force
+    } catch {
+        throw @"
+Could not remove or quarantine node_modules.
+Stop Road Hawk web/API terminals and anything using C:\rh-web or port 3000, then retry.
+$($_.Exception.Message)
+"@
+    }
 }

@@ -7,6 +7,11 @@ function Install-RoadHawkWebDeps {
         [switch]$CleanInstall
     )
 
+    if (-not $CleanInstall -and (Test-RoadHawkWebDepsHealthy -WebWorkDir $WebWorkDir)) {
+        Write-Host "Existing web dependencies look healthy; skipping npm ci."
+        return
+    }
+
     if ($CleanInstall) {
         Reset-RoadHawkWebNodeModules -WebWorkDir $WebWorkDir
     }
