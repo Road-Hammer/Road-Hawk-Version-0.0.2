@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .branding import (
@@ -16,6 +17,17 @@ from .branding import (
     TAGLINE,
 )
 from .config import api_url, apply_runtime_config, cors_origins, deploy_mode
+from .document_services import (
+    export_documents_csv,
+    get_document,
+    get_document_file_path,
+    ingest_document,
+    list_documents,
+    reject_document,
+    reprocess_document,
+    verify_document,
+)
+from .document_types import DOCUMENT_TYPES, SOURCE_TYPES, VERIFICATION_STATUSES
 from .services import (
     TripInput,
     bootstrap,
@@ -82,6 +94,20 @@ class MaintenanceCreate(BaseModel):
     service_date: str = Field(min_length=1)
     details: str = Field(min_length=1)
     cost: float | None = None
+
+
+class DocumentVerify(BaseModel):
+    corrected_fields: dict[str, str] = Field(default_factory=dict)
+    document_type: str | None = None
+
+
+class DocumentReject(BaseModel):
+    reason: str | None = None
+    rejected: bool = False
+
+
+class DocumentReprocess(BaseModel):
+    document_type_hint: str | None = None
 
 
 @app.get("/api/health")
@@ -173,3 +199,109 @@ def create_maintenance(payload: MaintenanceCreate) -> dict:
 def export_trips() -> dict:
     path = export_trips_csv()
     return {"path": str(path), "message": "Trips exported to CSV"}
+
+
+@app.post("/api/documents/upload", status_code=201)
+async def upload_document(
+    file: UploadFile = File(...),
+    source_type: str = Form(default="upload"),
+    driver_id: str | None = Form(default=None),
+    truck_number: str | None = Form(default=None),
+    load_number: str | None = Form(default=None),
+    document_type_hint: str | None = Form(default=None),
+) -> dict:
+    if source_type not in SOURCE_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid source_type: {source_type}")
+    if document_type_hint and document_type_hint not in DOCUMENT_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid document_type_hint: {document_type_hint}")
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+
+    try:
+        return ingest_document(
+            file.file,
+            original_filename=file.filename,
+            mime_type=file.content_type,
+            source_type=source_type,
+            driver_id=driver_id,
+            truck_number=truck_number,
+            load_number=load_number,
+            document_type_hint=document_type_hint,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/documents")
+def documents(
+    driver_id: str | None = None,
+    verification_status: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> list[dict]:
+    if verification_status and verification_status not in VERIFICATION_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid verification_status: {verification_status}")
+    return list_documents(
+        driver_id=driver_id,
+        verification_status=verification_status,
+        limit=limit,
+    )
+
+
+@app.get("/api/documents/{document_id}")
+def document_detail(document_id: int) -> dict:
+    try:
+        return get_document(document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/documents/{document_id}/file")
+def document_file(document_id: int) -> FileResponse:
+    try:
+        path = get_document_file_path(document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return FileResponse(path, filename=path.name)
+
+
+@app.post("/api/documents/{document_id}/verify")
+def verify_document_record(document_id: int, payload: DocumentVerify) -> dict:
+    try:
+        return verify_document(
+            document_id,
+            corrected_fields=payload.corrected_fields,
+            document_type=payload.document_type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/documents/{document_id}/reject")
+def reject_document_record(document_id: int, payload: DocumentReject) -> dict:
+    try:
+        return reject_document(
+            document_id,
+            reason=payload.reason,
+            status="rejected" if payload.rejected else "needs_review",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/documents/{document_id}/reprocess")
+def reprocess_document_record(document_id: int, payload: DocumentReprocess) -> dict:
+    try:
+        return reprocess_document(
+            document_id,
+            document_type_hint=payload.document_type_hint,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/export/documents")
+def export_documents() -> dict:
+    path = export_documents_csv()
+    return {"path": str(path), "message": "Documents exported to CSV"}

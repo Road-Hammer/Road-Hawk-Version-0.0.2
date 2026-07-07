@@ -67,6 +67,62 @@ export type MaintenanceRecord = {
   created_at: string;
 };
 
+export type DocumentSummary = {
+  id: number;
+  document_type: string;
+  original_filename: string;
+  mime_type: string | null;
+  source_type: string;
+  extraction_method: string;
+  verification_status: string;
+  driver_id: string | null;
+  truck_number: string | null;
+  load_number: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DocumentField = {
+  id: number;
+  document_id: number;
+  field_name: string;
+  extracted_value: string | null;
+  corrected_value: string | null;
+  confidence: number | null;
+  verified: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DocumentDetail = {
+  document: DocumentSummary & { stored_path: string };
+  extraction: {
+    id: number;
+    document_id: number;
+    raw_text: string;
+    ocr_confidence: number | null;
+    parser_version: string;
+    extraction_notes: string | null;
+    created_at: string;
+  } | null;
+  fields: DocumentField[];
+};
+
+async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    body: formData,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const api = {
   getStats: () => request<Stats>("/api/stats"),
   getDrivers: () => request<Driver[]>("/api/drivers"),
@@ -91,4 +147,31 @@ export const api = {
     }),
   exportTrips: () =>
     request<{ path: string; message: string }>("/api/export/trips", { method: "POST" }),
+  getDocuments: (limit = 50) => request<DocumentSummary[]>(`/api/documents?limit=${limit}`),
+  getDocument: (documentId: number) => request<DocumentDetail>(`/api/documents/${documentId}`),
+  uploadDocument: (formData: FormData) =>
+    uploadRequest<DocumentDetail>("/api/documents/upload", formData),
+  verifyDocument: (
+    documentId: number,
+    body: { corrected_fields: Record<string, string>; document_type?: string },
+  ) =>
+    request<DocumentDetail>(`/api/documents/${documentId}/verify`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  rejectDocument: (
+    documentId: number,
+    body: { reason?: string; rejected?: boolean },
+  ) =>
+    request<DocumentDetail>(`/api/documents/${documentId}/reject`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  reprocessDocument: (documentId: number, body: { document_type_hint?: string }) =>
+    request<DocumentDetail>(`/api/documents/${documentId}/reprocess`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  exportDocuments: () =>
+    request<{ path: string; message: string }>("/api/export/documents", { method: "POST" }),
 };

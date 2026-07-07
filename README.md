@@ -11,7 +11,7 @@ This repository is the active Road Hammer / STWL development lane for fleet and 
 
 **Classification:** ACTIVE-BUILD  
 **Safe to run:** Yes — CLI + web dashboard with SQLite persistence  
-**Next action:** Coyote voice integration and cloud sync
+**Next action:** Coyote voice integration and cloud sync (document intake lane active in Round 2)
 
 ## License status
 
@@ -109,6 +109,40 @@ Canonical brand files live on **D:** at `D:\STWL\STWL\SCREENSHOTS\`. The web UI 
 .\scripts\sync-brand-assets.ps1
 ```
 
+## Document intake (Coyote Round 2)
+
+Drivers can upload paperwork through the **Documents** page in the web dashboard or via the API. Road Hawk extracts embedded text first and only falls back to local OCR for images/scans/image-only PDFs.
+
+```bash
+pip install -e ".[dev]"
+road-hawk-api
+# web dashboard → Documents
+```
+
+**Optional local OCR** (Tesseract + image-only PDF page rendering):
+
+```bash
+pip install -e ".[ocr]"
+# Windows: winget install UB-Mannheim.TesseractOCR
+```
+
+If OCR is not installed, uploads still work — the record is stored, the original file is preserved, and the document is marked `needs_review` for manual entry.
+
+**API endpoints:**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/documents/upload` | Upload file + metadata, run extraction |
+| GET | `/api/documents` | List document records |
+| GET | `/api/documents/{id}` | Metadata, raw text, parsed fields |
+| POST | `/api/documents/{id}/verify` | Driver confirms/corrects fields |
+| POST | `/api/documents/{id}/reject` | Reject or flag needs review |
+| POST | `/api/documents/{id}/reprocess` | Rerun extraction/parser |
+| POST | `/api/export/documents` | CSV export (includes verification status) |
+
+Original files: `data/uploads/{document_id}/`  
+Parsed fields remain **unverified** until the driver reviews them.
+
 ## Tests
 
 ```bash
@@ -116,7 +150,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest.
+Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest (including `tests/test_documents.py`).
 
 **CI on push to `Road-Hawk`:**
 - `test` — `pytest -q`
@@ -125,10 +159,10 @@ Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest.
 ## Project Structure
 
 ```
-src/road_hawk/   → Python package (CLI, API, services, database, config)
-web/             → Next.js dashboard
+src/road_hawk/   → Python package (CLI, API, services, document intake, database, config)
+web/             → Next.js dashboard (includes /documents intake page)
 scripts/         → Start/setup helpers (.ps1 Windows, .sh cross-platform)
-tests/           → pytest suite (test_services, test_api)
+tests/           → pytest suite (test_services, test_api, test_documents)
 archive/         → Legacy prototypes and prior monolithic sources
 data/            → SQLite database (gitignored)
 .env.example     → Standalone/server/client environment template

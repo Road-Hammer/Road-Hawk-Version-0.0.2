@@ -48,6 +48,49 @@ CREATE TABLE IF NOT EXISTS maintenance_records (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (truck_number) REFERENCES trucks(truck_number)
 );
+
+CREATE TABLE IF NOT EXISTS documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_type TEXT NOT NULL DEFAULT 'unknown',
+    original_filename TEXT NOT NULL,
+    stored_path TEXT NOT NULL,
+    mime_type TEXT,
+    source_type TEXT NOT NULL DEFAULT 'upload',
+    extraction_method TEXT NOT NULL DEFAULT 'manual',
+    verification_status TEXT NOT NULL DEFAULT 'unverified',
+    driver_id TEXT,
+    truck_number TEXT,
+    load_number TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (driver_id) REFERENCES drivers(driver_id),
+    FOREIGN KEY (truck_number) REFERENCES trucks(truck_number)
+);
+
+CREATE TABLE IF NOT EXISTS document_extractions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    raw_text TEXT NOT NULL DEFAULT '',
+    ocr_confidence REAL,
+    parser_version TEXT NOT NULL,
+    extraction_notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS document_fields (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    field_name TEXT NOT NULL,
+    extracted_value TEXT,
+    corrected_value TEXT,
+    confidence REAL,
+    verified INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+    UNIQUE (document_id, field_name)
+);
 """
 
 
@@ -67,6 +110,12 @@ def repo_root() -> Path:
 
 def data_dir() -> Path:
     path = repo_root() / "data"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def uploads_dir() -> Path:
+    path = data_dir() / "uploads"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
