@@ -1,18 +1,60 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+import {
+  clearAuthSession,
+  loadAuthUser,
+  loadConnection,
+  normalizeApiUrl,
+  resolveApiBase,
+  resolveAuthToken,
+  saveAuthSession,
+  saveConnection,
+  type AuthSession,
+  type AuthUser,
+  type ConnectionConfig,
+} from "@/lib/connection";
+
+export type ConnectionInfo = {
+  mode: string;
+  connection_modes: string[];
+  api_url: string;
+  api_host: string;
+  api_port: number;
+  auth_required: boolean;
+  roles: string[];
+  server_hint: string;
+  client_hint: string;
+};
+
+export type AuthStatus = {
+  auth_required: boolean;
+  authenticated: boolean;
+  user: AuthUser | null;
+  roles: string[];
+};
+
+async function buildHeaders(extra?: HeadersInit): Promise<HeadersInit> {
+  const token = await resolveAuthToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(extra ?? {}),
+  };
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const apiBase = await resolveApiBase();
+  const response = await fetch(`${apiBase}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers: await buildHeaders(init?.headers),
     cache: "no-store",
   });
 
   if (!response.ok) {
     const detail = await response.text();
     throw new Error(detail || `Request failed: ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -109,9 +151,56 @@ export type DocumentDetail = {
 };
 
 async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const apiBase = await resolveApiBase();
+  const token = await resolveAuthToken();
+  const response = await fetch(`${apiBase}${path}`, {
     method: "POST",
     body: formData,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function downloadRequest(path: string, filename: string, init?: RequestInit): Promise<void> {
+  const apiBase = await resolveApiBase();
+  const token = await resolveAuthToken();
+  const response = await fetch(`${apiBase}${path}`, {
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function publicRequest<T>(apiBase: string, path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${normalizeApiUrl(apiBase)}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
     cache: "no-store",
   });
 
@@ -124,6 +213,32 @@ async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
 }
 
 export const api = {
+  getConnectionInfo: () => request<ConnectionInfo>("/api/connection"),
+  getAuthStatus: () => request<AuthStatus>("/api/auth/status"),
+  login: async (apiBase: string, body: { username: string; password: string }) => {
+    const result = await publicRequest<AuthSession>(apiBase, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    saveAuthSession(result);
+    return result;
+  },
+  logout: async () => {
+    try {
+      await request<{ message: string }>("/api/auth/logout", { method: "POST" });
+    } finally {
+      clearAuthSession();
+    }
+  },
+  testConnection: async (config: ConnectionConfig) => {
+    return publicRequest<{
+      status: string;
+      mode: string;
+      api_url: string;
+      auth_required: boolean;
+      connection_modes: string[];
+    }>(config.apiUrl, "/api/health");
+  },
   getStats: () => request<Stats>("/api/stats"),
   getDrivers: () => request<Driver[]>("/api/drivers"),
   createDriver: (body: Driver) =>
@@ -145,8 +260,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  exportTrips: () =>
-    request<{ path: string; message: string }>("/api/export/trips", { method: "POST" }),
+  exportTrips: () => downloadRequest("/api/export/trips", "trips_export.csv", { method: "POST" }),
+  importTrips: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return uploadRequest<{
+      filename: string;
+      imported: number;
+      skipped: number;
+      errors: string[];
+      message: string;
+    }>("/api/import/trips", formData);
+  },
   getDocuments: (limit = 50) => request<DocumentSummary[]>(`/api/documents?limit=${limit}`),
   getDocument: (documentId: number) => request<DocumentDetail>(`/api/documents/${documentId}`),
   uploadDocument: (formData: FormData) =>
@@ -173,5 +298,69 @@ export const api = {
       body: JSON.stringify(body),
     }),
   exportDocuments: () =>
-    request<{ path: string; message: string }>("/api/export/documents", { method: "POST" }),
+    downloadRequest("/api/export/documents", "documents_export.csv", { method: "POST" }),
+  getCompPlansMeta: () =>
+    request<{
+      position_types: string[];
+      pay_methods: string[];
+      scenario_types: string[];
+      disclaimer: string;
+    }>("/api/comp-plans/meta"),
+  getCompPlans: () =>
+    request<
+      Array<{
+        id: number;
+        company_name: string;
+        position_type: string;
+        pay_method: string;
+        notes: string | null;
+        base_result: {
+          weekly_net: number;
+          annual_net: number;
+          net_per_dispatched_mile: number;
+          net_per_hour: number;
+          risk_level: string;
+        } | null;
+      }>
+    >("/api/comp-plans"),
+  createCompPlan: (body: Record<string, unknown>) =>
+    request<Record<string, unknown>>("/api/comp-plans", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteCompPlan: (planId: number) =>
+    request<void>(`/api/comp-plans/${planId}`, { method: "DELETE" }),
+  compareCompPlans: (ids: number[], scenario = "base") =>
+    request<{
+      scenario: string;
+      disclaimer: string;
+      results: Array<{
+        rank: number;
+        plan_id: number;
+        company_name: string;
+        position_type: string;
+        pay_method: string;
+        weekly_net: number;
+        monthly_net: number;
+        annual_net: number;
+        net_per_dispatched_mile: number;
+        net_per_hour: number;
+        risk_level: string;
+        flags: Array<{ level: string; message: string }>;
+        notes: string | null;
+        calculation_notes: string;
+      }>;
+    }>(`/api/comp-plans/compare/ranked?ids=${ids.join(",")}&scenario=${encodeURIComponent(scenario)}`),
+  exportCompPlans: () =>
+    downloadRequest("/api/comp-plans/export", "comp_plans_export.csv", { method: "POST" }),
+  importCompPlans: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return uploadRequest<{ imported: number; errors: string[]; message: string }>(
+      "/api/comp-plans/import",
+      formData,
+    );
+  },
 };
+
+export { loadConnection, saveConnection, loadAuthUser, clearAuthSession };

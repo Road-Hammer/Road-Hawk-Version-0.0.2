@@ -16,7 +16,9 @@ const links = [
   { href: "/", label: "Dashboard" },
   { href: "/documents", label: "Documents" },
   { href: "/trips", label: "Trips" },
+  { href: "/comp-plans", label: "Comp Plans" },
   { href: "/fleet", label: "Fleet" },
+  { href: "/connect", label: "Connect" },
   { href: "/maintenance", label: "Maintenance" },
   { href: "/privacy", label: "Privacy" },
 ];
@@ -63,7 +65,11 @@ export function Sidebar() {
 
       <div className="mt-auto space-y-3">
         <div className="rounded-xl border border-road-border bg-road-panel p-4 text-xs text-road-muted">
-          API: {process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000"}
+          <div>Default API: {process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000"}</div>
+          <div className="mt-2">
+            Use <span className="text-road-amber">Connect</span> to switch standalone, server, or remote
+            client mode.
+          </div>
         </div>
         <p className="px-1 text-[10px] leading-relaxed text-road-muted/80">{TRADEMARK_FOOTER_SHORT}</p>
       </div>

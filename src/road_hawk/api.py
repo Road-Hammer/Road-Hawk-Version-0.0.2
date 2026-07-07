@@ -2,11 +2,22 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
+from starlette.requests import Request
 
+from .auth_services import (
+    APP_ROLES,
+    auth_required,
+    auth_status,
+    authenticate_user,
+    create_session,
+    create_user,
+    get_user_from_token,
+    revoke_session,
+)
 from .branding import (
     BRAND,
     BRAND_ASSETS_SOURCE,
@@ -31,8 +42,31 @@ from .branding import (
     TAGLINE,
     TRADEMARK_FOOTER_SHORT,
 )
-from .config import api_url, apply_runtime_config, cors_origins, deploy_mode
+from .config import api_host, api_port, api_url, apply_runtime_config, connection_modes, cors_origins, deploy_mode
 from .version import git_revision, package_version
+from .comp_services import (
+    ESTIMATE_DISCLAIMER,
+    PAY_METHODS,
+    POSITION_TYPES,
+    SCENARIO_TYPES,
+    compare_comp_plans,
+    create_comp_plan,
+    delete_comp_plan,
+    export_comp_plans_csv,
+    get_comp_plan,
+    import_comp_plans_csv,
+    list_comp_plans,
+)
+from .chain_services import (
+    CHAIN_ROLES,
+    CHAIN_STATUSES,
+    add_chained_user,
+    get_chain_profile,
+    list_chained_users,
+    remove_chained_user,
+    update_chain_profile,
+    update_chained_user,
+)
 from .document_services import (
     export_documents_csv,
     get_document,
@@ -52,6 +86,7 @@ from .services import (
     ensure_truck,
     export_trips_csv,
     fuel_efficiency_report,
+    import_trips_csv,
     list_drivers,
     list_maintenance,
     list_recent_trips,
@@ -73,6 +108,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+PUBLIC_API_PATHS = {
+    "/api/health",
+    "/api/connection",
+    "/api/auth/login",
+    "/api/auth/status",
+    "/api/auth/logout",
+    "/api/auth/bootstrap",
+}
+
+
+@app.middleware("http")
+async def require_auth_middleware(request: Request, call_next):
+    if not auth_required():
+        return await call_next(request)
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    path = request.url.path.rstrip("/") or "/"
+    if path in PUBLIC_API_PATHS:
+        return await call_next(request)
+    auth_header = request.headers.get("Authorization", "")
+    token = (
+        auth_header.removeprefix("Bearer ").strip()
+        if auth_header.startswith("Bearer ")
+        else None
+    )
+    if not get_user_from_token(token):
+        return JSONResponse(status_code=401, content={"detail": "Authentication required"})
+    return await call_next(request)
 
 
 @app.on_event("startup")
@@ -126,6 +190,84 @@ class DocumentReprocess(BaseModel):
     document_type_hint: str | None = None
 
 
+class ChainProfileUpdate(BaseModel):
+    display_name: str = Field(min_length=1)
+
+
+class ChainedUserCreate(BaseModel):
+    user_key: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    role: str = "driver"
+    api_url: str | None = None
+    contact: str | None = None
+    status: str = "active"
+    notes: str | None = None
+
+
+class ChainedUserUpdate(BaseModel):
+    display_name: str | None = None
+    role: str | None = None
+    api_url: str | None = None
+    contact: str | None = None
+    status: str | None = None
+    notes: str | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+
+
+class BootstrapUserRequest(BaseModel):
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+    display_name: str | None = None
+    role: str = "admin"
+
+
+class CompPlanFlag(BaseModel):
+    level: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+
+
+class CompPlanScenario(BaseModel):
+    scenario_type: str = "base"
+    weekly_miles: float = 0
+    weekly_hours: float = 0
+    loaded_miles: float = 0
+    empty_miles: float = 0
+    gross_pay_weekly: float = 0
+    accessorials_weekly: float = 0
+    bonuses_weekly: float = 0
+    benefits_value_weekly: float = 0
+    payroll_tax_weekly: float = 0
+    income_tax_reserve_weekly: float = 0
+    self_employment_tax_weekly: float = 0
+    health_insurance_weekly: float = 0
+    retirement_weekly: float = 0
+    truck_payment_weekly: float = 0
+    trailer_rental_weekly: float = 0
+    maintenance_escrow_weekly: float = 0
+    performance_escrow_weekly: float = 0
+    insurance_weekly: float = 0
+    fuel_weekly: float = 0
+    tolls_weekly: float = 0
+    admin_fees_weekly: float = 0
+    carrier_percentage: float = 0
+    other_deductions_weekly: float = 0
+    downtime_reserve_weekly: float = 0
+
+
+class CompPlanCreate(BaseModel):
+    company_name: str = Field(min_length=1)
+    position_type: str = Field(min_length=1)
+    pay_method: str = "mixed"
+    home_time_notes: str | None = None
+    notes: str | None = None
+    flags: list[CompPlanFlag] = Field(default_factory=list)
+    scenarios: list[CompPlanScenario] = Field(default_factory=list)
+
+
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {
@@ -158,6 +300,92 @@ def health() -> dict[str, Any]:
         "brand_assets_source": BRAND_ASSETS_SOURCE,
         "mode": deploy_mode(),
         "api_url": api_url(),
+        "auth_required": auth_required(),
+        "connection_modes": connection_modes(),
+    }
+
+
+@app.get("/api/connection")
+def connection_info() -> dict[str, Any]:
+    return {
+        "mode": deploy_mode(),
+        "connection_modes": connection_modes(),
+        "api_url": api_url(),
+        "api_host": api_host(),
+        "api_port": api_port(),
+        "auth_required": auth_required(),
+        "roles": sorted(APP_ROLES),
+        "server_hint": (
+            "Set ROAD_HAWK_MODE=server, ROAD_HAWK_API_HOST=0.0.0.0, and "
+            "ROAD_HAWK_AUTH_REQUIRED=1 to accept remote logins."
+        ),
+        "client_hint": (
+            "Set dashboard connection mode to Remote client and enter this server's API URL."
+        ),
+    }
+
+
+@app.get("/api/auth/status")
+def get_auth_status(authorization: Annotated[str | None, Header()] = None) -> dict:
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.removeprefix("Bearer ").strip()
+    return auth_status(token)
+
+
+@app.post("/api/auth/login")
+def login(payload: LoginRequest) -> dict:
+    try:
+        user = authenticate_user(payload.username, payload.password)
+        session = create_session(user["id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return {
+        "token": session["token"],
+        "expires_at": session["expires_at"],
+        "user": user,
+    }
+
+
+@app.post("/api/auth/logout")
+def logout(authorization: Annotated[str | None, Header()] = None) -> dict:
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.removeprefix("Bearer ").strip()
+    revoke_session(token)
+    return {"message": "Logged out"}
+
+
+@app.post("/api/auth/bootstrap", status_code=201)
+def bootstrap_first_user(payload: BootstrapUserRequest) -> dict:
+    from .database import connect
+
+    with connect() as conn:
+        count = conn.execute("SELECT COUNT(*) AS count FROM app_users").fetchone()["count"]
+    if count:
+        raise HTTPException(status_code=400, detail="Users already exist")
+
+    try:
+        user = create_user(
+            username=payload.username,
+            password=payload.password,
+            role=payload.role,
+            display_name=payload.display_name,
+        )
+        session = create_session(user["id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "token": session["token"],
+        "expires_at": session["expires_at"],
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "role": user["role"],
+            "display_name": user["display_name"],
+        },
+        "message": "Initial admin user created",
     }
 
 
@@ -231,9 +459,26 @@ def create_maintenance(payload: MaintenanceCreate) -> dict:
 
 
 @app.post("/api/export/trips")
-def export_trips() -> dict:
+def export_trips() -> FileResponse:
     path = export_trips_csv()
-    return {"path": str(path), "message": "Trips exported to CSV"}
+    return FileResponse(
+        path,
+        media_type="text/csv; charset=utf-8",
+        filename="trips_export.csv",
+    )
+
+
+@app.post("/api/import/trips")
+async def import_trips(file: UploadFile = File(...)) -> dict:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="CSV file required")
+
+    try:
+        return import_trips_csv(file.file, filename=file.filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/documents/upload", status_code=201)
@@ -337,6 +582,144 @@ def reprocess_document_record(document_id: int, payload: DocumentReprocess) -> d
 
 
 @app.post("/api/export/documents")
-def export_documents() -> dict:
+def export_documents() -> FileResponse:
     path = export_documents_csv()
-    return {"path": str(path), "message": "Documents exported to CSV"}
+    return FileResponse(
+        path,
+        media_type="text/csv; charset=utf-8",
+        filename="documents_export.csv",
+    )
+
+
+@app.get("/api/chain/profile")
+def chain_profile() -> dict:
+    return {
+        **get_chain_profile(),
+        "roles": sorted(CHAIN_ROLES),
+        "statuses": sorted(CHAIN_STATUSES),
+    }
+
+
+@app.put("/api/chain/profile")
+def update_profile(payload: ChainProfileUpdate) -> dict:
+    try:
+        return update_chain_profile(display_name=payload.display_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/chain/users")
+def chained_users() -> list[dict]:
+    return list_chained_users()
+
+
+@app.post("/api/chain/users", status_code=201)
+def create_chained_user(payload: ChainedUserCreate) -> dict:
+    try:
+        return add_chained_user(**payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.patch("/api/chain/users/{chained_id}")
+def patch_chained_user(chained_id: int, payload: ChainedUserUpdate) -> dict:
+    fields = payload.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    try:
+        return update_chained_user(chained_id, **fields)
+    except ValueError as exc:
+        status = 404 if "not found" in str(exc).lower() else 400
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
+
+
+@app.delete("/api/chain/users/{chained_id}", status_code=204)
+def delete_chained_user(chained_id: int) -> None:
+    try:
+        remove_chained_user(chained_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/comp-plans/meta")
+def comp_plans_meta() -> dict:
+    return {
+        "position_types": sorted(POSITION_TYPES),
+        "pay_methods": sorted(PAY_METHODS),
+        "scenario_types": sorted(SCENARIO_TYPES),
+        "disclaimer": ESTIMATE_DISCLAIMER,
+    }
+
+
+@app.get("/api/comp-plans")
+def comp_plans_list() -> list[dict]:
+    return list_comp_plans()
+
+
+@app.post("/api/comp-plans", status_code=201)
+def comp_plans_create(payload: CompPlanCreate) -> dict:
+    body = payload.model_dump()
+    if not body["scenarios"]:
+        body["scenarios"] = [CompPlanScenario().model_dump()]
+    try:
+        return create_comp_plan(body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/comp-plans/compare/ranked")
+def comp_plans_compare(
+    ids: str,
+    scenario: str = "base",
+) -> dict:
+    try:
+        plan_ids = [int(value.strip()) for value in ids.split(",") if value.strip()]
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid plan ids") from exc
+    if not plan_ids:
+        raise HTTPException(status_code=400, detail="At least one plan id is required")
+    try:
+        ranked = compare_comp_plans(plan_ids, scenario_type=scenario)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "scenario": scenario,
+        "disclaimer": ESTIMATE_DISCLAIMER,
+        "results": ranked,
+    }
+
+
+@app.post("/api/comp-plans/import")
+async def comp_plans_import(file: UploadFile = File(...)) -> dict:
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="CSV file required")
+    try:
+        return import_comp_plans_csv(file.file)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/comp-plans/export")
+def comp_plans_export() -> FileResponse:
+    path = export_comp_plans_csv()
+    return FileResponse(
+        path,
+        media_type="text/csv; charset=utf-8",
+        filename="comp_plans_export.csv",
+    )
+
+
+@app.get("/api/comp-plans/{plan_id}")
+def comp_plans_detail(plan_id: int) -> dict:
+    try:
+        return get_comp_plan(plan_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.delete("/api/comp-plans/{plan_id}", status_code=204)
+def comp_plans_delete(plan_id: int) -> None:
+    try:
+        delete_comp_plan(plan_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

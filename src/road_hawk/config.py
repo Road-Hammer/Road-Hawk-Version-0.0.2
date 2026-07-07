@@ -14,8 +14,15 @@ DEFAULT_CORS_ORIGINS = (
 
 
 def deploy_mode() -> str:
-    """standalone = local API+DB server; client = UI/CLI targets a remote API URL."""
-    return os.environ.get("ROAD_HAWK_MODE", "standalone").strip().lower()
+    """standalone = local API+DB on one machine; server = API host for remote clients; client = remote UI only."""
+    raw = os.environ.get("ROAD_HAWK_MODE", "standalone").strip().lower()
+    if raw in {"server", "standalone", "client"}:
+        return raw
+    return "standalone"
+
+
+def connection_modes() -> list[str]:
+    return ["standalone", "server", "client"]
 
 
 def data_dir_override() -> Path | None:

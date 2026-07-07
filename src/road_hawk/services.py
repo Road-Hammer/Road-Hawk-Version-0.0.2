@@ -2,9 +2,25 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from io import TextIOWrapper
 from pathlib import Path
+from typing import BinaryIO, TextIO
 
 from .database import connect, data_dir, init_db
+
+TRIP_CSV_FIELDNAMES = [
+    "logged_at",
+    "driver_id",
+    "truck_number",
+    "miles_driven",
+    "fuel_used",
+    "load_weight",
+    "hours_driven",
+    "mpg",
+    "fuel_cost",
+    "avg_speed",
+    "location",
+]
 
 
 @dataclass
@@ -228,27 +244,139 @@ def export_trips_csv(path: Path | None = None) -> Path:
             """
         ).fetchall()
 
-    fieldnames = [
-        "logged_at",
-        "driver_id",
-        "truck_number",
-        "miles_driven",
-        "fuel_used",
-        "load_weight",
-        "hours_driven",
-        "mpg",
-        "fuel_cost",
-        "avg_speed",
-        "location",
-    ]
     with export_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=TRIP_CSV_FIELDNAMES)
         writer.writeheader()
         for row in rows:
-            writer.writerow({key: row[key] for key in fieldnames})
+            writer.writerow({key: row[key] for key in TRIP_CSV_FIELDNAMES})
 
     return export_path
 
 
+def _optional_float(value: str | None) -> float | None:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned:
+        return None
+    return float(cleaned)
+
+
+def _trip_row_from_csv(row: dict[str, str | None]) -> TripInput:
+    driver_id = (row.get("driver_id") or "").strip()
+    truck_number = (row.get("truck_number") or "").strip()
+    miles_raw = (row.get("miles_driven") or "").strip()
+    fuel_raw = (row.get("fuel_used") or "").strip()
+
+    if not driver_id:
+        raise ValueError("driver_id is required")
+    if not truck_number:
+        raise ValueError("truck_number is required")
+    if not miles_raw:
+        raise ValueError("miles_driven is required")
+    if not fuel_raw:
+        raise ValueError("fuel_used is required")
+
+    miles_driven = float(miles_raw)
+    fuel_used = float(fuel_raw)
+    if miles_driven <= 0:
+        raise ValueError("miles_driven must be greater than 0")
+    if fuel_used <= 0:
+        raise ValueError("fuel_used must be greater than 0")
+
+    fuel_price = _optional_float(row.get("fuel_price"))
+    fuel_cost = _optional_float(row.get("fuel_cost"))
+    if fuel_price is None and fuel_cost is not None and fuel_used > 0:
+        fuel_price = round(fuel_cost / fuel_used, 4)
+
+    location = (row.get("location") or "").strip() or None
+
+    return TripInput(
+        driver_id=driver_id,
+        truck_number=truck_number,
+        miles_driven=miles_driven,
+        fuel_used=fuel_used,
+        load_weight=_optional_float(row.get("load_weight")),
+        hours_driven=_optional_float(row.get("hours_driven")),
+        fuel_price=fuel_price,
+        location=location,
+    )
+
+
+def import_trips_csv(
+    source: Path | BinaryIO | TextIO,
+    *,
+    filename: str = "import.csv",
+) -> dict:
+    if isinstance(source, Path):
+        handle: TextIO = source.open(newline="", encoding="utf-8-sig")
+        close_handle = True
+    elif isinstance(source, TextIO):
+        handle = source
+        close_handle = False
+    else:
+        handle = TextIOWrapper(source, encoding="utf-8-sig", newline="")
+        close_handle = True
+
+    imported = 0
+    skipped = 0
+    errors: list[str] = []
+
+    try:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError("CSV file is missing a header row")
+
+        normalized_headers = {
+            (name or "").strip().lower(): name for name in reader.fieldnames if name
+        }
+        required_headers = {"driver_id", "truck_number", "miles_driven", "fuel_used"}
+        missing_headers = sorted(required_headers - set(normalized_headers))
+        if missing_headers:
+            joined = ", ".join(missing_headers)
+            raise ValueError(f"CSV is missing required columns: {joined}")
+
+        for line_number, raw_row in enumerate(reader, start=2):
+            if not any((value or "").strip() for value in raw_row.values()):
+                skipped += 1
+                continue
+
+            normalized_row = {
+                key.strip().lower(): (value.strip() if isinstance(value, str) else value)
+                for key, value in raw_row.items()
+                if key
+            }
+
+            try:
+                trip = _trip_row_from_csv(normalized_row)
+                result = log_trip(trip)
+                logged_at = (normalized_row.get("logged_at") or "").strip()
+                if logged_at:
+                    with connect() as conn:
+                        conn.execute(
+                            "UPDATE trips SET logged_at = ? WHERE id = ?",
+                            (logged_at, result["id"]),
+                        )
+                imported += 1
+            except (ValueError, TypeError) as exc:
+                errors.append(f"Row {line_number}: {exc}")
+    finally:
+        if close_handle:
+            handle.close()
+
+    return {
+        "filename": filename,
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"Imported {imported} trip(s) from {filename}",
+    }
+
+
 def bootstrap() -> None:
     init_db()
+    from .auth_services import ensure_bootstrap_admin
+    from .chain_services import ensure_chain_profile
+
+    ensure_chain_profile()
+    ensure_bootstrap_admin()

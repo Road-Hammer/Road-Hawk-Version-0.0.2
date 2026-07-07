@@ -44,3 +44,46 @@ def test_smoke_trip_logging_and_export(isolated_data_root: Path) -> None:
     assert export_path.exists()
     assert "RH-001" in export_path.read_text(encoding="utf-8")
     assert export_path.parent == isolated_data_root / "data"
+
+
+def test_import_trips_csv_round_trip(isolated_data_root: Path) -> None:
+    services.ensure_driver("RH-001", "Road Hammer")
+    services.ensure_truck("T-101")
+    services.log_trip(
+        services.TripInput(
+            driver_id="RH-001",
+            truck_number="T-101",
+            miles_driven=100,
+            fuel_used=10,
+            location="PA Turnpike",
+        )
+    )
+
+    export_path = services.export_trips_csv()
+
+    with database.connect() as conn:
+        conn.execute("DELETE FROM trips")
+
+    result = services.import_trips_csv(export_path)
+    assert result["imported"] == 1
+    assert result["errors"] == []
+
+    trips = services.list_recent_trips(limit=10)
+    assert len(trips) == 1
+    assert trips[0]["driver_id"] == "RH-001"
+    assert trips[0]["location"] == "PA Turnpike"
+
+
+def test_import_trips_csv_reports_row_errors(isolated_data_root: Path) -> None:
+    csv_path = isolated_data_root / "bad_import.csv"
+    csv_path.write_text(
+        "driver_id,truck_number,miles_driven,fuel_used\n"
+        "RH-001,T-101,100,10\n"
+        "RH-002,,50,5\n",
+        encoding="utf-8",
+    )
+
+    result = services.import_trips_csv(csv_path)
+    assert result["imported"] == 1
+    assert len(result["errors"]) == 1
+    assert "truck_number is required" in result["errors"][0]
