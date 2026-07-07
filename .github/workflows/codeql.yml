@@ -13,11 +13,12 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "Road-Hawk", "rule" ]
+    branches: ["Road-Hawk", "master"]
   pull_request:
-    branches: [ "Road-Hawk", "rule" ]
+    branches: ["Road-Hawk", "master"]
   schedule:
-    - cron: '44 12 * * 0'
+    - cron: "44 12 * * 0"
+  workflow_dispatch:
 
 jobs:
   analyze:
