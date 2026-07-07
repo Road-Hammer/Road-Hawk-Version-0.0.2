@@ -12,7 +12,7 @@ function Install-RoadHawkWebDeps {
         return
     }
 
-    if ($CleanInstall) {
+    if ($CleanInstall -or (Test-Path (Join-Path $WebWorkDir "node_modules"))) {
         Reset-RoadHawkWebNodeModules -WebWorkDir $WebWorkDir
     }
 

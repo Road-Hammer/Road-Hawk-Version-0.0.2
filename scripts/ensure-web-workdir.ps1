@@ -69,14 +69,25 @@ function Reset-RoadHawkWebNodeModules {
     }
 
     $stamp = Get-Date -Format "yyyyMMddHHmmss"
+    $emptyDir = Join-Path $WebWorkDir ".empty.$stamp"
+    New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
+    Write-Host "rmdir incomplete; mirroring empty dir over node_modules..."
+    cmd /c "robocopy `"$emptyDir`" `"$nodeModules`" /MIR /NFL /NDL /NJH /NJS /nc /ns /np"
+    Remove-Item -LiteralPath $emptyDir -Recurse -Force -ErrorAction SilentlyContinue
+    cmd /c "rmdir /s /q `"$nodeModules`""
+    if (-not (Test-Path $nodeModules)) {
+        return
+    }
+
     $quarantineName = "node_modules.quarantine.$stamp"
-    Write-Host "rmdir failed; quarantining node_modules to $quarantineName..."
+    Write-Host "robocopy cleanup failed; quarantining node_modules to $quarantineName..."
     try {
         Rename-Item -LiteralPath $nodeModules -NewName $quarantineName -Force
     } catch {
         throw @"
 Could not remove or quarantine node_modules.
 Stop Road Hawk web/API terminals and anything using C:\rh-web or port 3000, then retry.
+Or use: .\scripts\push-update.ps1 -Message `"..."` -SkipWebBuild
 $($_.Exception.Message)
 "@
     }
