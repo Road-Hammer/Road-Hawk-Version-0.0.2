@@ -11,3 +11,7 @@ def main() -> None:
         port=api_port(),
         reload=True,
     )
+
+
+if __name__ == "__main__":
+    main()
