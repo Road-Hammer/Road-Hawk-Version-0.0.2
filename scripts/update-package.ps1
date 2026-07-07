@@ -11,16 +11,7 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
-$nodePaths = @(
-    "C:\Program Files\nodejs",
-    "$env:LOCALAPPDATA\road-hawk-node"
-)
-foreach ($dir in $nodePaths) {
-    if (Test-Path "$dir\node.exe") {
-        $env:PATH = "$dir;$env:PATH"
-        break
-    }
-}
+. (Join-Path $PSScriptRoot "ensure-node-path.ps1")
 
 Write-Host "Road Hawk package update"
 Write-Host "Repository: $repo"
@@ -47,13 +38,14 @@ if ($IncludeOcr) {
 Write-Host "Reinstalling Python package $extras..."
 pip install -e "$repo$extras"
 
-Write-Host "Refreshing web dependencies..."
+$nodeTools = Get-RoadHawkNodeTools
+Write-Host "Refreshing web dependencies with Node at $($nodeTools.NodeDir)..."
 Set-Location (Join-Path $repo "web")
 if ($ProductionWeb) {
-    npm ci
-    npm run build
+    & $nodeTools.NpmCmd ci
+    & $nodeTools.NpmCmd run build
 } else {
-    npm install
+    & $nodeTools.NpmCmd install
 }
 
 Set-Location $repo

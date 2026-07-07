@@ -12,16 +12,7 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
-$nodePaths = @(
-    "C:\Program Files\nodejs",
-    "$env:LOCALAPPDATA\road-hawk-node"
-)
-foreach ($dir in $nodePaths) {
-    if (Test-Path "$dir\node.exe") {
-        $env:PATH = "$dir;$env:PATH"
-        break
-    }
-}
+. (Join-Path $PSScriptRoot "ensure-node-path.ps1")
 
 Write-Host "Road Hawk push-update"
 Write-Host "Target branch: $Branch"
@@ -35,10 +26,32 @@ if (-not $SkipTests) {
 }
 
 if (-not $SkipWebBuild) {
-    Write-Host "Building web dashboard..."
-    Set-Location (Join-Path $repo "web")
-    npm ci
-    npm run build
+    $nodeTools = Get-RoadHawkNodeTools
+    Write-Host "Building web dashboard with Node at $($nodeTools.NodeDir)..."
+    & $nodeTools.NodeExe --version
+
+    $webDir = Join-Path $repo "web"
+    Set-Location $webDir
+
+    & $nodeTools.NpmCmd ci
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "npm ci failed; falling back to npm install..."
+        & $nodeTools.NpmCmd install
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm install failed with exit code $LASTEXITCODE"
+        }
+    }
+
+    $webBin = Join-Path $webDir "node_modules\.bin"
+    if (Test-Path $webBin) {
+        $env:PATH = "$webBin;$env:PATH"
+    }
+
+    & $nodeTools.NpmCmd run build
+    if ($LASTEXITCODE -ne 0) {
+        throw "npm run build failed with exit code $LASTEXITCODE"
+    }
+
     Set-Location $repo
 }
 
