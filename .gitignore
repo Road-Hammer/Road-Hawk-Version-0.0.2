@@ -11,4 +11,5 @@ web/node_modules.quarantine.*/
 web/.next/
 web/out/
 web/.env.local
+push-update-dryrun.*
 * - Copy*
