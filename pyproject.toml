@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "road-hawk"
+version = "0.1.0"
+description = "Fleet and driver operations for trucking"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[project.scripts]
+road-hawk = "road_hawk.cli:main"
+road-hawk-api = "road_hawk.api_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

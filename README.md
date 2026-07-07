@@ -1,3 +1,57 @@
+## Repository Status
+
+**Classification:** ACTIVE-BUILD  
+**Purpose:** Fleet and driver operations platform for owner-operators and small fleets.  
+**Use in Lucy/STWL:** Yes — core trucking ops module.  
+**License checked:** Original work.  
+**Safe to run:** Yes — CLI + web dashboard with SQLite persistence.  
+**Next action:** Coyote voice integration and cloud sync.
+
+### Quick Start (CLI)
+
+```bash
+cd road-hawk
+pip install -e .
+road-hawk
+```
+
+Or without installing:
+
+```bash
+python -m road_hawk
+```
+
+### Web UI
+
+Terminal 1 — API server:
+
+```bash
+pip install -e .
+road-hawk-api
+```
+
+Terminal 2 — web dashboard:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+If `node` is not recognized, run once from repo root:
+
+```powershell
+.\scripts\repair-node-path.ps1
+```
+
+Then open a new terminal, or use `.\web\dev.cmd` directly.
+
+Open http://localhost:3000
+
+Data is stored in `data/road_hawk.db`. Legacy alpha code is preserved in `archive/`.
+
+---
+
 Road Hawk — Operational Command Software Suite
 
 
