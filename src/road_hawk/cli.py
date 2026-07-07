@@ -189,11 +189,15 @@ MENU = {
 
 
 def main() -> None:
+    from .branding import BRAND, COMPANY_LEGAL, COMPANY_SHORT, COPYRIGHT_NOTICE, PRODUCT, TAGLINE
+
     bootstrap()
-    print("Road Hawk v0.1 — built by a trucker, for truckers.")
+    print(f"{PRODUCT} v0.1 — {TAGLINE}")
+    print(f"{COMPANY_SHORT} / {BRAND} · {COMPANY_LEGAL}")
+    print(COPYRIGHT_NOTICE)
 
     while True:
-        print("\n==== Road Hawk ====")
+        print(f"\n==== {PRODUCT} ====")
         for key, (label, _) in MENU.items():
             print(f"{key}. {label}")
 

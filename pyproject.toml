@@ -5,9 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "road-hawk"
 version = "0.1.0"
-description = "Fleet and driver operations for trucking"
+description = "Road Hawk by Road Hammer — fleet and driver operations for Susquehanna Timberwolf Lines LLC"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [{ name = "Susquehanna Timberwolf Lines LLC" }]
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",

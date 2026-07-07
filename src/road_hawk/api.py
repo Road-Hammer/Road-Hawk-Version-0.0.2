@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from .branding import BRAND, COMPANY_LEGAL, COMPANY_SHORT, COPYRIGHT_NOTICE, PRODUCT, TAGLINE
 from .services import (
     TripInput,
     bootstrap,
@@ -22,7 +23,11 @@ from .services import (
     log_trip,
 )
 
-app = FastAPI(title="Road Hawk API", version="0.1.0")
+app = FastAPI(
+    title=f"{PRODUCT} API",
+    description=f"{PRODUCT} by {BRAND} — {COMPANY_LEGAL}. {TAGLINE}",
+    version="0.1.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,7 +76,15 @@ class MaintenanceCreate(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "road-hawk"}
+    return {
+        "status": "ok",
+        "service": "road-hawk",
+        "product": PRODUCT,
+        "brand": BRAND,
+        "company": COMPANY_LEGAL,
+        "company_short": COMPANY_SHORT,
+        "copyright": COPYRIGHT_NOTICE,
+    }
 
 
 @app.get("/api/stats")

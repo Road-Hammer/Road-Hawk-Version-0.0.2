@@ -1,5 +1,8 @@
 # Road Hawk Version 0.0.2
 
+**STWL** · Susquehanna Timberwolf Lines LLC  
+**Product:** Road Hawk · **Brand:** Road Hammer
+
 ## Status
 
 Road Hawk is back in current development.
@@ -76,8 +79,15 @@ data/            → SQLite database (gitignored)
 
 ## Contact
 
+Susquehanna Timberwolf Lines LLC (STWL)  
 Road Hammer Driver Solutions — NEPA, USA
 
 "Old School Truckin' Values. Building new School Tools."
 
 📫 [office@thatdambbs.com](mailto:office@thatdambbs.com)
+
+## Copyright
+
+© 2026 Susquehanna Timberwolf Lines LLC. All rights reserved.
+
+Road Hawk is a Road Hammer product developed for STWL operations.
