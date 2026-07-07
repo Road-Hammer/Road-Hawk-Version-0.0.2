@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,11 +12,24 @@ from .branding import (
     BRAND_ASSETS_SOURCE,
     COMPANY_LEGAL,
     COMPANY_SHORT,
+    CONTACT_EMAIL,
+    CONTACT_HOURS,
+    CONTACT_LINKS,
+    CONTACT_LOCATION,
+    CONTACT_ORGANIZATIONS,
+    CONTACT_PHONE,
+    CONTACT_PHONE_URL,
+    CONTACT_TIMEZONE,
+    CONTACT_TIMEZONE_LABEL,
+    CONTACT_WEBSITE,
     COPYRIGHT_NOTICE,
+    COPYRIGHT_TRADEMARK_NOTICE,
+    COPYRIGHT_TRADEMARK_NOTICE_LEGAL,
     PRIVACY_FOOTER_SHORT,
     PRIVACY_NOTICE_ROAD_HAWK_TITLE,
     PRODUCT,
     TAGLINE,
+    TRADEMARK_FOOTER_SHORT,
 )
 from .config import api_url, apply_runtime_config, cors_origins, deploy_mode
 from .version import git_revision, package_version
@@ -114,7 +127,7 @@ class DocumentReprocess(BaseModel):
 
 
 @app.get("/api/health")
-def health() -> dict[str, str | None]:
+def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "road-hawk",
@@ -125,8 +138,23 @@ def health() -> dict[str, str | None]:
         "company": COMPANY_LEGAL,
         "company_short": COMPANY_SHORT,
         "copyright": COPYRIGHT_NOTICE,
+        "trademark_footer": TRADEMARK_FOOTER_SHORT,
+        "copyright_trademark_notice": COPYRIGHT_TRADEMARK_NOTICE,
+        "copyright_trademark_notice_legal": COPYRIGHT_TRADEMARK_NOTICE_LEGAL,
         "privacy_notice": PRIVACY_NOTICE_ROAD_HAWK_TITLE,
         "privacy_footer": PRIVACY_FOOTER_SHORT,
+        "contact": {
+            "organizations": CONTACT_ORGANIZATIONS,
+            "location": CONTACT_LOCATION,
+            "timezone": CONTACT_TIMEZONE,
+            "timezone_label": CONTACT_TIMEZONE_LABEL,
+            "email": CONTACT_EMAIL,
+            "phone": CONTACT_PHONE,
+            "phone_url": CONTACT_PHONE_URL,
+            "hours": CONTACT_HOURS,
+            "website": CONTACT_WEBSITE,
+            "links": CONTACT_LINKS,
+        },
         "brand_assets_source": BRAND_ASSETS_SOURCE,
         "mode": deploy_mode(),
         "api_url": api_url(),

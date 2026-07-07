@@ -1,6 +1,9 @@
+import { ContactBlock } from "@/components/ContactBlock";
 import {
   COMPANY_LEGAL,
   COMPANY_SHORT,
+  COPYRIGHT_TRADEMARK_NOTICE,
+  COPYRIGHT_TRADEMARK_NOTICE_LEGAL,
   PRIVACY_NOTICE_ROAD_HAWK_BODY,
   PRIVACY_NOTICE_ROAD_HAWK_TITLE,
   PRIVACY_STATEMENT_STWL,
@@ -34,6 +37,12 @@ export default function PrivacyPage() {
       <PrivacySection title={PRIVACY_NOTICE_ROAD_HAWK_TITLE} body={PRIVACY_NOTICE_ROAD_HAWK_BODY} />
 
       <PrivacySection title="STWL does not sell user data" body={PRIVACY_STATEMENT_STWL} />
+
+      <PrivacySection title="Copyright and trademark notice" body={COPYRIGHT_TRADEMARK_NOTICE} />
+
+      <PrivacySection title="Legal use and licensing" body={COPYRIGHT_TRADEMARK_NOTICE_LEGAL} />
+
+      <ContactBlock />
     </div>
   );
 }

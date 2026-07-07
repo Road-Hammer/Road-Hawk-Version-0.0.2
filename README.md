@@ -235,12 +235,22 @@ data/            → SQLite database (gitignored)
 
 ## Contact
 
-Susquehanna Timberwolf Lines LLC (STWL)  
-Road Hammer Driver Solutions — NEPA, USA
+**Susquehanna Timberwolf Lines, LLC / That Dam BBS!, Inc.**  
+Montrose, PA — USA · UTC-04:00
 
 "Old School Truckin' Values. Building new School Tools."
 
-📫 [office@thatdambbs.com](mailto:office@thatdambbs.com)
+**Hours:** 11am to 8pm Eastern, Monday to Friday. Closed weekends and federal holidays.
+
+- Website: [www.thatdambbs.com](https://www.thatdambbs.com)
+- Email: [office@thatdambbs.com](mailto:office@thatdambbs.com)
+- Phone: [570-442-0273](tel:+15704420273)
+- GitHub: [github.com/Road-Hammer](https://github.com/Road-Hammer)
+- Telegram: [t.me/NEPA_BBS](https://t.me/NEPA_BBS)
+- LinkedIn: [in/roadhammer](https://www.linkedin.com/in/roadhammer)
+- Facebook: [profile](https://www.facebook.com/profile.php?id=61578962531585)
+- YouTube: [@1stRoadhammer](https://www.youtube.com/@1stRoadhammer)
+- X: [@1stRoadhammer](https://x.com/1stRoadhammer)
 
 ## Privacy
 
@@ -254,8 +264,12 @@ Any sharing of information is limited to what is necessary to provide services, 
 
 The web dashboard includes a **Privacy** page (`/privacy`) with the Road Hawk–specific notice and full STWL statement.
 
-## Copyright
+## Copyright and Trademark Notice
 
 © 2026 Susquehanna Timberwolf Lines LLC. All rights reserved.
 
-Road Hawk is a Road Hammer product developed for STWL operations.
+Road Hawk™ is a Road Hammer™ product developed for STWL operations.
+
+Road Hawk™ and Road Hammer™ are trademarks and/or service marks claimed by Susquehanna Timberwolf Lines LLC. No permission is granted to copy, reuse, sell, sublicense, distribute, or commercially exploit STWL software, branding, documentation, workflows, logos, names, or related materials unless expressly authorized in writing by Susquehanna Timberwolf Lines LLC.
+
+No public license is currently granted.

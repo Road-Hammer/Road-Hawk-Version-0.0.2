@@ -2,15 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   BRAND,
-  COMPANY_LEGAL,
   COMPANY_SHORT,
-  COPYRIGHT_NOTICE,
+  CONTACT_HOURS,
+  CONTACT_LINKS,
+  CONTACT_LOCATION,
+  CONTACT_ORGANIZATIONS,
+  CONTACT_TIMEZONE_LABEL,
   LOGO_ALT,
   LOGO_PATH,
   PACKAGE_VERSION,
   PRIVACY_FOOTER_SHORT,
   PRODUCT,
   PRODUCT_LINE,
+  TRADEMARK_FOOTER_SHORT,
 } from "@/lib/branding";
 
 export function AppFooter() {
@@ -26,11 +30,42 @@ export function AppFooter() {
             className="h-12 w-12 rounded-md border border-road-border object-cover"
           />
           <div>
-            <p className="font-medium text-slate-300">{COMPANY_LEGAL}</p>
+            <p className="font-medium text-slate-300">{CONTACT_ORGANIZATIONS}</p>
             <p>{PRODUCT_LINE}</p>
+            <p className="mt-1 text-[11px] text-road-muted/90">
+              {CONTACT_LOCATION} · {CONTACT_TIMEZONE_LABEL}
+            </p>
+            <p className="mt-1 text-[11px] text-road-muted/80">Hours: {CONTACT_HOURS}</p>
           </div>
         </div>
-        <p className="text-right">{COPYRIGHT_NOTICE}</p>
+        <div className="space-y-1 text-right">
+          {TRADEMARK_FOOTER_SHORT.split("\n").map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-road-muted/90">
+        {CONTACT_LINKS.map((link, index) => (
+          <span key={`${link.label}-${link.url}`} className="inline-flex items-center gap-2">
+            {index > 0 ? <span aria-hidden="true">·</span> : null}
+            <a
+              href={link.url}
+              target={
+                link.url.startsWith("mailto:") || link.url.startsWith("tel:")
+                  ? undefined
+                  : "_blank"
+              }
+              rel={
+                link.url.startsWith("mailto:") || link.url.startsWith("tel:")
+                  ? undefined
+                  : "noopener noreferrer"
+              }
+              className="text-road-amber/90 transition hover:text-road-amber"
+            >
+              {link.display}
+            </a>
+          </span>
+        ))}
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-road-muted/90">{PRIVACY_FOOTER_SHORT}</p>
       <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-road-muted/80">

@@ -27,7 +27,28 @@ def test_api_health_smoke(client: TestClient) -> None:
     assert payload["status"] == "ok"
     assert payload["service"] == "road-hawk"
     assert "copyright" in payload
+    assert "trademark_footer" in payload
+    assert "Road Hawk™" in payload["trademark_footer"]
+    assert "copyright_trademark_notice_legal" in payload
+    assert "No public license is currently granted" in payload["copyright_trademark_notice_legal"]
     assert "privacy_footer" in payload
     assert "STWL does not sell" in payload["privacy_footer"]
+    assert "contact" in payload
+    assert payload["contact"]["location"] == "Montrose, PA — USA"
+    assert payload["contact"]["email"] == "office@thatdambbs.com"
+    assert payload["contact"]["phone"] == "570-442-0273"
+    assert "Monday to Friday" in payload["contact"]["hours"]
+    assert any(
+        link["label"] == "X" and link["url"] == "https://x.com/1stRoadhammer"
+        for link in payload["contact"]["links"]
+    )
+    assert any(
+        link["label"] == "YouTube" and "youtube.com" in link["url"]
+        for link in payload["contact"]["links"]
+    )
+    assert any(
+        link["label"] == "GitHub" and link["url"] == "https://github.com/Road-Hammer"
+        for link in payload["contact"]["links"]
+    )
     assert "version" in payload
     assert payload["version"]

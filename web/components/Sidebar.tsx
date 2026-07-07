@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BRAND,
-  COPYRIGHT_NOTICE,
   LOGO_ALT,
   LOGO_PATH,
   PRODUCT,
   TAGLINE,
+  TRADEMARK_FOOTER_SHORT,
 } from "@/lib/branding";
 
 const links = [
@@ -65,7 +65,7 @@ export function Sidebar() {
         <div className="rounded-xl border border-road-border bg-road-panel p-4 text-xs text-road-muted">
           API: {process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000"}
         </div>
-        <p className="px-1 text-[10px] leading-relaxed text-road-muted/80">{COPYRIGHT_NOTICE}</p>
+        <p className="px-1 text-[10px] leading-relaxed text-road-muted/80">{TRADEMARK_FOOTER_SHORT}</p>
       </div>
     </aside>
   );
