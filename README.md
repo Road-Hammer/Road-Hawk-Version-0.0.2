@@ -204,6 +204,8 @@ Optional flags: `-SkipTests`, `-SkipWebBuild`, `-DryRun` (PowerShell) or `--skip
 
 Override branch with `-Branch other-branch` or `ROAD_HAWK_GIT_BRANCH=other-branch`.
 
+**Windows note:** `push-update.ps1` and `update-package.ps1` create a `C:\rh-web` junction to the repo `web/` folder so `npm ci` uses a short path and avoids `ENOTEMPTY` errors on long `D:` drive paths. If local web build still fails, use `-SkipWebBuild` — GitHub Actions builds the dashboard on push.
+
 `GET /api/health` returns `version` and `git_revision` so clients can confirm what build is running.
 
 ## Tests

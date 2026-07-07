@@ -13,6 +13,8 @@ $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
 . (Join-Path $PSScriptRoot "ensure-node-path.ps1")
+. (Join-Path $PSScriptRoot "ensure-web-workdir.ps1")
+. (Join-Path $PSScriptRoot "invoke-web-npm.ps1")
 
 Write-Host "Road Hawk push-update"
 Write-Host "Target branch: $Branch"
@@ -30,28 +32,10 @@ if (-not $SkipWebBuild) {
     Write-Host "Building web dashboard with Node at $($nodeTools.NodeDir)..."
     & $nodeTools.NodeExe --version
 
-    $webDir = Join-Path $repo "web"
-    Set-Location $webDir
-
-    & $nodeTools.NpmCmd ci
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "npm ci failed; falling back to npm install..."
-        & $nodeTools.NpmCmd install
-        if ($LASTEXITCODE -ne 0) {
-            throw "npm install failed with exit code $LASTEXITCODE"
-        }
-    }
-
-    $webBin = Join-Path $webDir "node_modules\.bin"
-    if (Test-Path $webBin) {
-        $env:PATH = "$webBin;$env:PATH"
-    }
-
-    & $nodeTools.NpmCmd run build
-    if ($LASTEXITCODE -ne 0) {
-        throw "npm run build failed with exit code $LASTEXITCODE"
-    }
-
+    $webWorkDir = Get-RoadHawkWebWorkDir -RepoRoot $repo
+    Set-Location $webWorkDir
+    Install-RoadHawkWebDeps -NodeTools $nodeTools -WebWorkDir $webWorkDir
+    Build-RoadHawkWeb -NodeTools $nodeTools -WebWorkDir $webWorkDir
     Set-Location $repo
 }
 

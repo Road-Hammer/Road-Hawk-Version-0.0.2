@@ -12,6 +12,8 @@ $repo = Split-Path $PSScriptRoot -Parent
 Set-Location $repo
 
 . (Join-Path $PSScriptRoot "ensure-node-path.ps1")
+. (Join-Path $PSScriptRoot "ensure-web-workdir.ps1")
+. (Join-Path $PSScriptRoot "invoke-web-npm.ps1")
 
 Write-Host "Road Hawk package update"
 Write-Host "Repository: $repo"
@@ -40,12 +42,16 @@ pip install -e "$repo$extras"
 
 $nodeTools = Get-RoadHawkNodeTools
 Write-Host "Refreshing web dependencies with Node at $($nodeTools.NodeDir)..."
-Set-Location (Join-Path $repo "web")
+$webWorkDir = Get-RoadHawkWebWorkDir -RepoRoot $repo
+Set-Location $webWorkDir
 if ($ProductionWeb) {
-    & $nodeTools.NpmCmd ci
-    & $nodeTools.NpmCmd run build
+    Install-RoadHawkWebDeps -NodeTools $nodeTools -WebWorkDir $webWorkDir
+    Build-RoadHawkWeb -NodeTools $nodeTools -WebWorkDir $webWorkDir
 } else {
     & $nodeTools.NpmCmd install
+    if ($LASTEXITCODE -ne 0) {
+        throw "npm install failed with exit code $LASTEXITCODE"
+    }
 }
 
 Set-Location $repo
