@@ -1,6 +1,0 @@
-npm error code ENOTEMPTY
-npm error syscall rmdir
-npm error path C:\rh-web\node_modules\caniuse-lite\dist\unpacker
-npm error errno -4051
-npm error ENOTEMPTY: directory not empty, rmdir 'C:\rh-web\node_modules\caniuse-lite\dist\unpacker'
-npm error A complete log of this run can be found in: C:\Users\tonyz\AppData\Local\npm-cache\_logs\2026-07-07T21_53_03_239Z-debug-0.log

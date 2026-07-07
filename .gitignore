@@ -12,4 +12,7 @@ web/.next/
 web/out/
 web/.env.local
 push-update-dryrun.*
+*-build-*.log
+npm-*.log
+update-package*.log
 * - Copy*
