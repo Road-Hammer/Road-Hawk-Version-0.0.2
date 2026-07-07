@@ -43,12 +43,25 @@ function Build-RoadHawkWeb {
     )
 
     $webBin = Join-Path $WebWorkDir "node_modules\.bin"
+    $nextCmd = Join-Path $webBin "next.cmd"
+    $nextCli = Join-Path $WebWorkDir "node_modules\next\dist\bin\next"
+
     if (Test-Path $webBin) {
-        $env:PATH = "$webBin;$env:PATH"
+        $env:PATH = "$webBin;$($NodeTools.NodeDir);$env:PATH"
     }
 
-    & $NodeTools.NpmCmd run build
+    if (Test-Path $nextCmd) {
+        Write-Host "Running next build via $nextCmd"
+        & $nextCmd build
+    } elseif (Test-Path "$nextCli.js") {
+        Write-Host "Running next build via node CLI"
+        & $NodeTools.NodeExe "$nextCli.js" build
+    } else {
+        Write-Host "Running next build via npm exec"
+        & $NodeTools.NpmCmd exec -- next build
+    }
+
     if ($LASTEXITCODE -ne 0) {
-        throw "npm run build failed with exit code $LASTEXITCODE"
+        throw "next build failed with exit code $LASTEXITCODE"
     }
 }
