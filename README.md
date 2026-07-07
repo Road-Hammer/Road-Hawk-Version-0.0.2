@@ -116,7 +116,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest (CI runs `pytest -q` on push).
+Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest.
+
+**CI on push to `Road-Hawk`:**
+- `test` — `pytest -q`
+- `web-build` — `npm ci` + `npm run build` in `web/`
 
 ## Project Structure
 

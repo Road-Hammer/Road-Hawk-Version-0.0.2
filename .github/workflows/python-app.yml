@@ -1,4 +1,4 @@
-name: Python application
+name: Road Hawk CI
 
 on:
   push:
@@ -24,3 +24,23 @@ jobs:
           pip install -e ".[dev]"
       - name: Run pytest
         run: pytest -q
+
+  web-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install web dependencies
+        run: npm ci
+      - name: Build Next.js dashboard
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
