@@ -13,6 +13,9 @@ foreach ($dir in $nodePaths) {
     }
 }
 
+Write-Host "Syncing version metadata..."
+python (Join-Path $PSScriptRoot "sync-version.py")
+
 Write-Host "Syncing STWL brand assets from D:\STWL..."
 & (Join-Path $PSScriptRoot "sync-brand-assets.ps1")
 

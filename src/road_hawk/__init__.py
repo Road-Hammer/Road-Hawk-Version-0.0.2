@@ -8,8 +8,9 @@ from .branding import (
     COPYRIGHT_NOTICE,
     PRODUCT,
 )
+from .version import package_version
 
-__version__ = "0.1.0"
+__version__ = package_version()
 __all__ = [
     "BRAND",
     "BRAND_ASSETS_SOURCE",

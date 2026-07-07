@@ -19,6 +19,7 @@ from .branding import (
     TAGLINE,
 )
 from .config import api_url, apply_runtime_config, cors_origins, deploy_mode
+from .version import git_revision, package_version
 from .document_services import (
     export_documents_csv,
     get_document,
@@ -49,7 +50,7 @@ from .services import (
 app = FastAPI(
     title=f"{PRODUCT} API",
     description=f"{PRODUCT} by {BRAND} — {COMPANY_LEGAL}. {TAGLINE}",
-    version="0.1.0",
+    version=package_version(),
 )
 
 app.add_middleware(
@@ -113,10 +114,12 @@ class DocumentReprocess(BaseModel):
 
 
 @app.get("/api/health")
-def health() -> dict[str, str]:
+def health() -> dict[str, str | None]:
     return {
         "status": "ok",
         "service": "road-hawk",
+        "version": package_version(),
+        "git_revision": git_revision(),
         "product": PRODUCT,
         "brand": BRAND,
         "company": COMPANY_LEGAL,

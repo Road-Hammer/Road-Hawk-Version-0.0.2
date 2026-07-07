@@ -7,6 +7,7 @@ import {
   COPYRIGHT_NOTICE,
   LOGO_ALT,
   LOGO_PATH,
+  PACKAGE_VERSION,
   PRIVACY_FOOTER_SHORT,
   PRODUCT,
   PRODUCT_LINE,
@@ -34,7 +35,7 @@ export function AppFooter() {
       <p className="mt-3 text-[11px] leading-relaxed text-road-muted/90">{PRIVACY_FOOTER_SHORT}</p>
       <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-road-muted/80">
         <span>
-          {PRODUCT} · {COMPANY_SHORT} / {BRAND}
+          {PRODUCT} v{PACKAGE_VERSION} · {COMPANY_SHORT} / {BRAND}
         </span>
         <span aria-hidden="true">·</span>
         <Link href="/privacy" className="text-road-amber/90 transition hover:text-road-amber">

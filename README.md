@@ -143,6 +143,69 @@ If OCR is not installed, uploads still work — the record is stored, the origin
 Original files: `data/uploads/{document_id}/`  
 Parsed fields remain **unverified** until the driver reviews them.
 
+## Updating Road Hawk
+
+Road Hawk has two update flows: **pull updates** on a machine that already runs the app, and **push updates** when Road Hammer ships new code to GitHub.
+
+### Bump the package version
+
+Edit `version` in `pyproject.toml`, then sync web metadata:
+
+```bash
+python scripts/sync-version.py
+```
+
+### Pull updates (driver laptop, shop PC, fleet server)
+
+Gets the latest code from GitHub, reinstalls Python + web deps, and runs smoke tests.
+
+**Windows:**
+
+```powershell
+.\scripts\update-package.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+chmod +x scripts/update-package.sh
+./scripts/update-package.sh
+```
+
+Useful flags:
+
+| Flag | Effect |
+|------|--------|
+| `-SkipPull` / `--skip-pull` | Reinstall only; do not `git pull` |
+| `-SkipTests` / `--skip-tests` | Skip pytest after update |
+| `-IncludeOcr` / `--include-ocr` | Also install optional OCR extras |
+| `-ProductionWeb` / `--production-web` | `npm ci` + production web build |
+
+After updating, restart the API and web processes if they are already running.
+
+### Push updates (maintainer / Road Hammer dev)
+
+Syncs version metadata, runs tests, builds the web dashboard, commits, and pushes to `Road-Hawk` (triggers CI).
+
+**Windows:**
+
+```powershell
+.\scripts\push-update.ps1 -Message "Describe the update here"
+```
+
+**Linux / macOS:**
+
+```bash
+chmod +x scripts/push-update.sh
+./scripts/push-update.sh "Describe the update here"
+```
+
+Optional flags: `-SkipTests`, `-SkipWebBuild`, `-DryRun` (PowerShell) or `--skip-tests`, `--skip-web-build`, `--dry-run` (shell).
+
+Override branch with `-Branch other-branch` or `ROAD_HAWK_GIT_BRANCH=other-branch`.
+
+`GET /api/health` returns `version` and `git_revision` so clients can confirm what build is running.
+
 ## Tests
 
 ```bash
@@ -161,7 +224,7 @@ Smoke tests live in `tests/test_*.py` and are auto-discovered by pytest (includi
 ```
 src/road_hawk/   → Python package (CLI, API, services, document intake, database, config)
 web/             → Next.js dashboard (includes /documents intake page)
-scripts/         → Start/setup helpers (.ps1 Windows, .sh cross-platform)
+scripts/         → Start/setup, update-package, push-update (.ps1 + .sh)
 tests/           → pytest suite (test_services, test_api, test_documents)
 archive/         → Legacy prototypes and prior monolithic sources
 data/            → SQLite database (gitignored)

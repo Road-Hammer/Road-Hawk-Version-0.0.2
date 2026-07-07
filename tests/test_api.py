@@ -29,3 +29,5 @@ def test_api_health_smoke(client: TestClient) -> None:
     assert "copyright" in payload
     assert "privacy_footer" in payload
     assert "STWL does not sell" in payload["privacy_footer"]
+    assert "version" in payload
+    assert payload["version"]
