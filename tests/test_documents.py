@@ -185,6 +185,19 @@ def test_export_preserves_verification_status(client: TestClient, isolated_data_
     assert str(document_id) in csv_text
 
 
+def test_malformed_pdf_upload_does_not_500(client: TestClient) -> None:
+    corrupt_pdf = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
+    response = client.post(
+        "/api/documents/upload",
+        files={"file": ("broken.pdf", corrupt_pdf, "application/pdf")},
+        data={"source_type": "upload"},
+    )
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["document"]["verification_status"] == "needs_review"
+    assert Path(payload["document"]["stored_path"]).exists()
+
+
 def test_reject_marks_needs_review(client: TestClient) -> None:
     upload = client.post(
         "/api/documents/upload",

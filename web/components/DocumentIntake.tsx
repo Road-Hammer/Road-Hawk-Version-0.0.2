@@ -86,10 +86,11 @@ export function DocumentIntake({ initialDocuments }: { initialDocuments: Documen
 
   async function onUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formEl = event.currentTarget;
     setBusy(true);
     setError(null);
     setMessage(null);
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formEl);
     const file = form.get("file");
     if (!(file instanceof File) || file.size === 0) {
       setError("Choose a document file first.");
@@ -97,12 +98,19 @@ export function DocumentIntake({ initialDocuments }: { initialDocuments: Documen
       return;
     }
 
+    for (const key of ["driver_id", "truck_number", "load_number", "document_type_hint"]) {
+      const value = form.get(key);
+      if (typeof value === "string" && value.trim() === "") {
+        form.delete(key);
+      }
+    }
+
     try {
       const uploaded = await api.uploadDocument(form);
       setMessage("Document uploaded. Review extracted fields before verifying.");
       await refreshList();
       await loadDetail(uploaded.document.id);
-      event.currentTarget.reset();
+      formEl.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");

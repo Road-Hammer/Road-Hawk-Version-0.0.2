@@ -31,6 +31,25 @@ export type AuthStatus = {
   roles: string[];
 };
 
+function formatApiError(status: number, detail: string): string {
+  const trimmed = detail.trim();
+  if (!trimmed) {
+    return `Request failed: ${status}`;
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as { detail?: string | Array<{ msg?: string }> };
+    if (typeof parsed.detail === "string") {
+      return parsed.detail;
+    }
+    if (Array.isArray(parsed.detail)) {
+      return parsed.detail.map((item) => item.msg ?? JSON.stringify(item)).join("; ");
+    }
+  } catch {
+    // use raw body
+  }
+  return trimmed;
+}
+
 async function buildHeaders(extra?: HeadersInit): Promise<HeadersInit> {
   const token = await resolveAuthToken();
   return {
@@ -50,7 +69,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `Request failed: ${response.status}`);
+    throw new Error(formatApiError(response.status, detail));
   }
 
   if (response.status === 204) {
@@ -162,7 +181,7 @@ async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `Request failed: ${response.status}`);
+    throw new Error(formatApiError(response.status, detail));
   }
 
   return response.json() as Promise<T>;

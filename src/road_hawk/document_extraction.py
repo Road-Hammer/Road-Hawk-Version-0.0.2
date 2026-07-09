@@ -28,17 +28,20 @@ def _read_plain_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def _extract_pdf_text(path: Path) -> str:
+def _extract_pdf_text(path: Path) -> tuple[str, str | None]:
     try:
         from pypdf import PdfReader
     except ImportError:
-        return ""
+        return "", "pypdf not installed."
 
-    reader = PdfReader(str(path))
-    chunks: list[str] = []
-    for page in reader.pages:
-        chunks.append(page.extract_text() or "")
-    return "\n".join(chunks).strip()
+    try:
+        reader = PdfReader(str(path))
+        chunks: list[str] = []
+        for page in reader.pages:
+            chunks.append(page.extract_text() or "")
+        return "\n".join(chunks).strip(), None
+    except Exception as exc:  # noqa: BLE001
+        return "", f"PDF text extraction failed: {exc}"
 
 
 def _ocr_image(path: Path) -> tuple[str, float | None, str]:
@@ -168,7 +171,7 @@ def extract_document_text(path: Path, mime_type: str | None) -> ExtractionResult
         )
 
     if is_pdf_mime(normalized_mime) or suffix == ".pdf":
-        direct_text = _extract_pdf_text(path)
+        direct_text, pdf_error = _extract_pdf_text(path)
         if len(direct_text) >= MIN_DIRECT_TEXT_CHARS:
             return ExtractionResult(
                 raw_text=direct_text,
@@ -189,11 +192,14 @@ def extract_document_text(path: Path, mime_type: str | None) -> ExtractionResult
                 needs_review=low_conf,
             )
 
+        failure_notes = "; ".join(
+            part for part in (pdf_error, note) if part
+        ) or "PDF contained insufficient extractable text."
         return ExtractionResult(
             raw_text=direct_text,
             method="failed",
             ocr_confidence=confidence,
-            notes=note or "PDF contained insufficient extractable text.",
+            notes=failure_notes,
             needs_review=True,
         )
 
