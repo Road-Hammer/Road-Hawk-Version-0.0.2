@@ -5,19 +5,18 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
+from .config import is_externally_exposed
 from .database import connect
 
 APP_ROLES = frozenset({"driver", "broker", "dispatcher", "spouse", "accountant", "admin"})
 SESSION_HOURS = 12
+_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
 def auth_required() -> bool:
-    return os.environ.get("ROAD_HAWK_AUTH_REQUIRED", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    """Require auth when explicitly enabled or whenever the API crosses loopback."""
+    explicit = os.environ.get("ROAD_HAWK_AUTH_REQUIRED", "").strip().lower()
+    return explicit in _TRUE_VALUES or is_externally_exposed()
 
 
 def _hash_password(password: str, salt: str) -> str:
@@ -54,6 +53,7 @@ def ensure_bootstrap_admin() -> None:
         password=admin_password,
         role="admin",
         display_name=admin_user,
+        allow_initial_admin=True,
     )
 
 
@@ -63,6 +63,7 @@ def create_user(
     password: str,
     role: str = "driver",
     display_name: str | None = None,
+    allow_initial_admin: bool = False,
 ) -> dict:
     cleaned_username = username.strip().lower()
     cleaned_role = role.strip().lower()
@@ -74,6 +75,15 @@ def create_user(
         raise ValueError("password is required")
     if cleaned_role not in APP_ROLES:
         raise ValueError(f"Invalid role: {role}")
+
+    with connect() as conn:
+        user_count = conn.execute("SELECT COUNT(*) AS count FROM app_users").fetchone()["count"]
+
+    if auth_required() and user_count == 0 and not allow_initial_admin:
+        raise ValueError(
+            "Remote first-user bootstrap is disabled. Configure ROAD_HAWK_ADMIN_USER "
+            "and ROAD_HAWK_ADMIN_PASSWORD on the server, then restart Road Hawk."
+        )
 
     salt = secrets.token_hex(16)
     password_hash = _hash_password(password, salt)
