@@ -5,12 +5,14 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-DEFAULT_API_HOST = "0.0.0.0"
+DEFAULT_API_HOST = "127.0.0.1"
 DEFAULT_API_PORT = 8000
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 )
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 def deploy_mode() -> str:
@@ -32,6 +34,22 @@ def data_dir_override() -> Path | None:
 
 def api_host() -> str:
     return os.environ.get("ROAD_HAWK_API_HOST", DEFAULT_API_HOST).strip()
+
+
+def is_loopback_host(host: str | None = None) -> bool:
+    """Return True only for explicit local-loopback bind targets."""
+    return (host or api_host()).strip().lower() in _LOOPBACK_HOSTS
+
+
+def is_externally_exposed() -> bool:
+    """Remote/server deployments must be treated as crossing a trust boundary."""
+    return deploy_mode() == "server" or not is_loopback_host()
+
+
+def api_reload() -> bool:
+    """Development reload is opt-in and is never allowed on a non-loopback bind."""
+    requested = os.environ.get("ROAD_HAWK_RELOAD", "").strip().lower() in _TRUE_VALUES
+    return requested and is_loopback_host()
 
 
 def api_port() -> int:

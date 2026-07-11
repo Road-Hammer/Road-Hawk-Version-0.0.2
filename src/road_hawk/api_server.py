@@ -1,6 +1,6 @@
 import uvicorn
 
-from .config import api_host, api_port, apply_runtime_config
+from .config import api_host, api_port, api_reload, apply_runtime_config
 
 
 def main() -> None:
@@ -9,7 +9,7 @@ def main() -> None:
         "road_hawk.api:app",
         host=api_host(),
         port=api_port(),
-        reload=True,
+        reload=api_reload(),
     )
 
 
