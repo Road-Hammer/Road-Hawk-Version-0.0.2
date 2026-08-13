@@ -1,0 +1,49 @@
+name: Repair Web Lockfile
+
+on:
+  push:
+    branches: ["Road-Hawk"]
+    paths:
+      - ".github/workflows/repair-web-lockfile.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: Road-Hawk
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Regenerate and verify lockfile
+        working-directory: web
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Commit repaired lockfile
+        run: |
+          git config user.name "Road Hammer CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add web/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Lockfile already consistent"
+          else
+            git commit -m "Regenerate web package lock"
+            git push origin HEAD:Road-Hawk
+          fi
+
+      - name: Verify Next.js build
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+        run: npm run build
